@@ -35,6 +35,11 @@ struct BrowserView: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Android file transfer")
+        .sheet(isPresented: $model.showPhotoGallery, onDismiss: {
+            Task { await model.closePhotoGallery() }
+        }) {
+            if let gallery = model.photoGallery { PhotoGalleryView(model: gallery) }
+        }
         .sheet(isPresented: $model.showAdvancedSheet) { ADBPanel() }
         .sheet(item: $model.namePrompt) { prompt in nameSheet(prompt) }
         .alert("Couldn’t complete the operation", isPresented: Binding(
@@ -242,7 +247,8 @@ struct BrowserView: View {
                 }
                 .contentShape(Rectangle())
                 .onTapGesture(count: 2) {
-                    if item.isDirectory { Task { await model.openFolder(item) } }
+                    model.selection = [item.id]
+                    Task { await model.openSelection() }
                 }
                 .accessibilityElement(children: .combine)
                 .accessibilityLabel(item.name)
@@ -267,8 +273,15 @@ struct BrowserView: View {
         }
         .disabled(model.isBusy)
         .contextMenu {
-            Button("Open folder") { Task { await model.openSelection() } }
-                .disabled(!model.canAct || model.selectedItems.count != 1 || model.selectedItems.first?.isDirectory != true)
+            Button("Open") {
+                if let photo = model.selectedPhoto { model.previewPhoto(photo, openOnMac: true) }
+                else { Task { await model.openSelection() } }
+            }.accessibilityLabel("Open selected item")
+                .disabled(!model.canAct || model.selectedItems.count != 1 || (model.selectedPhoto == nil && model.selectedItems.first?.isDirectory != true))
+            Button("Preview photo gallery") {
+                if let photo = model.selectedPhoto { model.previewPhoto(photo) }
+            }.accessibilityLabel("Preview selected photo")
+                .disabled(!model.canAct || model.selectedPhoto == nil)
             Button("Download to Mac…", action: model.chooseDownloadDestination)
                 .disabled(!model.canAct || model.selection.isEmpty)
             Button("Rename…", action: model.beginRename)
@@ -319,6 +332,13 @@ struct BrowserView: View {
     @ToolbarContentBuilder
     private var toolbar: some ToolbarContent {
         ToolbarItemGroup(placement: .automatic) {
+            Button {
+                if let photo = model.selectedPhoto { model.previewPhoto(photo) }
+                else if let photo = model.filteredItems.first(where: PhotoGalleryModel.isPhoto) { model.previewPhoto(photo) }
+            } label: { Label("Photo Gallery", systemImage: "photo.on.rectangle") }
+                .accessibilityLabel("Photo gallery")
+                .help("Preview photos in this folder")
+                .disabled(!model.canAct || !model.filteredItems.contains(where: PhotoGalleryModel.isPhoto))
             Button(action: model.chooseUploads) { Label("Upload", systemImage: "arrow.up.doc") }
                 .accessibilityLabel("Upload to Android")
                 .help("Upload files or folders to Android (⌘U)")

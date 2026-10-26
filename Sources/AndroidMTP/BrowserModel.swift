@@ -29,6 +29,9 @@ final class BrowserModel: ObservableObject {
     @Published var proposedName = ""
     @Published var showDeleteConfirmation = false
 
+    @Published var showPhotoGallery = false
+    private(set) var photoGallery: PhotoGalleryModel?
+
     private let service: any MTPTransport
     private var cancelled = false
     private var activeTransferID: UUID?
@@ -149,6 +152,28 @@ final class BrowserModel: ObservableObject {
     func openSelection() async {
         guard selectedItems.count == 1, let item = selectedItems.first else { return }
         if item.isDirectory { await openFolder(item) }
+        else if PhotoGalleryModel.isPhoto(item) { previewPhoto(item) }
+    }
+
+    var selectedPhoto: RemoteItem? {
+        selectedItems.count == 1 ? selectedItems.first.flatMap { PhotoGalleryModel.isPhoto($0) ? $0 : nil } : nil
+    }
+
+    func previewPhoto(_ item: RemoteItem, openOnMac: Bool = false) {
+        guard canAct, PhotoGalleryModel.isPhoto(item) else { return }
+        let photos = filteredItems.filter(PhotoGalleryModel.isPhoto)
+        guard photos.contains(where: { $0.id == item.id }) else { return }
+        let gallery = PhotoGalleryModel(photos: photos, selected: item, service: service)
+        photoGallery = gallery
+        isBusy = true
+        showPhotoGallery = true
+        if openOnMac { gallery.openOnMac() }
+    }
+
+    func closePhotoGallery() async {
+        await photoGallery?.finish()
+        photoGallery = nil
+        isBusy = false
     }
 
     func goToBreadcrumb(_ count: Int) async {

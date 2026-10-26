@@ -33,6 +33,11 @@ struct AndroidMTPApp: App {
                     .keyboardShortcut("d", modifiers: .command)
                     .disabled(!model.canAct || model.selection.isEmpty)
                 Divider()
+                Button("Preview Photo Gallery") {
+                    if let photo = model.selectedPhoto { model.previewPhoto(photo) }
+                }
+                    .keyboardShortcut(" ", modifiers: [])
+                    .disabled(!model.canAct || model.selectedPhoto == nil)
                 Button("Refresh") { Task { await model.refresh() } }
                     .keyboardShortcut("r", modifiers: .command)
                     .disabled(!model.canAct)

@@ -1,5 +1,13 @@
 # Development status
 
+## Version 0.3.0 — photo gallery, 26 October 2026
+
+Added an in-app photo gallery with a large image preview, thumbnail strip, previous/next navigation, Space shortcut, double-clicking a photo name, and Open on Mac. Photo reads share the existing MTP transport and run serially. Closing the gallery waits for the current read before enabling other file actions. No phone originals are changed.
+
+The release build and automated gallery checks pass, covering decoding, Unicode/uppercase extensions, rapid selection, serialized downloads, cache reuse, malformed images, the 100 MB preview limit, and safe dismissal. A separate sample-photo UI harness verified the rendered gallery, next-photo navigation, thumbnail selection, and the Open on Mac action. After reconnecting the X300 Pro, the actual app connected, browsed storage, and displayed a phone PNG in the gallery with all 12 folder thumbnails populated. The earlier upload/download verification below applies to version 0.2.0. A macOS accessibility recursion crash observed with the new selection-aware table menu was avoided by retaining the existing menu structure and photo-name double-click gesture.
+
+Preview copies are downsampled to 2200 pixels; thumbnails to 180 pixels. The first 200 photos are prefetched. Cached originals target a 512 MB budget, excluding files retained for a receiving Mac app, and unused preview files are removed on dismissal. The first frame of animated images is displayed.
+
 ## Version 0.2.0 — verified 26 October 2026
 
 The previous direct USB backend competed with macOS's photo-import service. Version 0.2.0 prefers standard MTP commands through Apple's ImageCaptureCore service. It does not stop Photos, OneDrive, or the camera service, and does not enable USB debugging. The direct libmtp implementation remains a fallback for devices the system browser does not discover.

@@ -1,6 +1,6 @@
 # AndroidMTP
 
-A native Mac file browser for Android phones. Standard USB **MTP / File transfer** is the default connection; **USB debugging is not required** for normal file access. Version 0.2.0 uses the macOS device service so Photos and OneDrive can keep running.
+A native Mac file browser for Android phones. Standard USB **MTP / File transfer** is the default connection; **USB debugging is not required** for normal file access. Version 0.3.0 adds a photo gallery and uses the macOS device service so Photos and OneDrive can keep running.
 
 ## Product direction
 
@@ -22,7 +22,7 @@ open build/AndroidMTP.app
 
 The build script builds the app and copies its MTP libraries into the local app bundle. The source targets macOS 13+, but the packaged app's minimum OS also follows the installed Homebrew libraries. This development bundle is built for this Mac. It uses ad-hoc signing; public distribution will need a proper release process.
 
-Run `./scripts/test.sh` for hardware-free checks of file safety, atomic download completion, cancellation, 64-bit values, PTP codecs, transport routing, recursive chunked transfers, ADB parsing, and APK preflight. The optional `./scripts/test.sh --xctest` suite needs an Xcode toolchain with XCTest.
+Run `./scripts/test.sh` for hardware-free checks of file safety, atomic download completion, cancellation, 64-bit values, PTP codecs, transport routing, recursive chunked transfers, ADB parsing, APK preflight, and gallery decoding, selection, caching, and dismissal. The optional `./scripts/test.sh --xctest` suite needs an Xcode toolchain with XCTest.
 
 For an optional live-device check, `./scripts/device-check.sh` prepares four harmless local files (including a 5 MB binary and an empty file) and builds the test executable. Run `.build/device-check/roundtrip .build/device-test` with exactly one unlocked phone connected. This explicitly uploads a test folder, renames it, downloads it, checks file hashes, and leaves the test folder on Android. It does not delete or replace existing phone files. It uses the same transport selection as the app.
 
@@ -35,6 +35,12 @@ For an optional live-device check, `./scripts/device-check.sh` prepares four har
 The default connection sends normal MTP commands through Apple's ImageCaptureCore service. It cooperates with the photo-import service rather than competing for its exclusive USB interface. A direct libmtp fallback is retained for devices macOS does not discover; that fallback may still require exclusive USB access. Connection errors appear next to the controls. See `docs/STATUS.md` for actual-app and live-device verification.
 
 Standard MTP only exposes the storage Android makes available. Protected app data and restricted Android folders may remain inaccessible. Enabling ADB does not grant root or promise access to private app data.
+
+## Photo gallery
+
+Double-click a photo, select it and press Space, or choose **Photo Gallery** in the toolbar. Browse the current folder's photos with the previous/next buttons, arrow keys, or thumbnail strip. Right-click a photo for **Preview photo gallery** or **Open**; **Open on Mac** uses the Mac's default image app.
+
+Previews copy photos to a temporary local cache, leaving phone originals unchanged. Thumbnails load in the background, one USB read at a time. The first 200 photos are prefetched; any other photo loads when selected. Individual previews are limited to 100 MB; larger files can be downloaded normally. The gallery keeps roughly 512 MB of originals plus small thumbnails; files explicitly opened in another app remain temporarily available for that app. Other gallery copies are removed when the gallery closes. Preview images are downsampled and show the first frame of animated images.
 
 ## References
 

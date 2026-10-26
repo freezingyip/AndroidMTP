@@ -3,7 +3,8 @@ set -euo pipefail
 TASK_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 if [[ "${1:-}" != "--xctest" ]]; then
     "$TASK_ROOT/scripts/check-core.sh"
-    exec "$TASK_ROOT/scripts/check-system-mtp.sh"
+    "$TASK_ROOT/scripts/check-system-mtp.sh"
+    exec "$TASK_ROOT/scripts/check-gallery.sh"
 fi
 if [[ "$(uname -m)" == "arm64" && -x /opt/homebrew/bin/pkg-config ]]; then
     export PATH="/opt/homebrew/bin:$PATH"
