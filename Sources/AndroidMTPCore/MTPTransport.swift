@@ -13,6 +13,12 @@ public protocol MTPTransport: Sendable {
                 progress: @escaping @Sendable (TransferUpdate) -> Void) async throws
     func download(_ item: RemoteItem, to localURL: URL,
                   progress: @escaping @Sendable (TransferUpdate) -> Void) async throws
+    /// Returns a device-generated small image, without downloading the original.
+    func thumbnail(_ item: RemoteItem) async throws -> Data?
     /// Implementations must be callable while an isolated transfer is in progress.
     func cancelTransfers()
+}
+
+public extension MTPTransport {
+    func thumbnail(_ item: RemoteItem) async throws -> Data? { nil }
 }

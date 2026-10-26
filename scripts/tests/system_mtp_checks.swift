@@ -8,9 +8,11 @@ final class SystemPTPLink {
         var item: RemoteItem
         var bytes: Data
     }
-    static let fullOperations: Set<UInt16> = [0x1001,0x1004,0x1005,0x1007,0x1008,0x1009,0x100B,0x100C,0x100D,0x101B,0x9803,0x9804,0x95C1,0x95C2,0x95C3,0x95C4,0x95C5]
+    static let fullOperations: Set<UInt16> = [0x1001,0x1004,0x1005,0x1007,0x1008,0x1009,0x100A,0x100B,0x100C,0x100D,0x101B,0x9803,0x9804,0x95C1,0x95C2,0x95C3,0x95C4,0x95C5]
     static var nextOperations = fullOperations
     static var latest: SystemPTPLink?
+    var thumbnailCode: UInt16 = 0x2001
+    var thumbnailBytes = Data([1, 2, 3])
     var supported: Set<UInt16>
     var objects: [UInt32: Object] = [:]
     var nextID: UInt32 = 100
@@ -116,6 +118,7 @@ final class SystemPTPLink {
             let payload = bytes.subdata(in: begin..<end)
             largestChunk = max(largestChunk, payload.count)
             return ok(payload, [UInt32(payload.count)])
+        case 0x100A: return PTPResult(data: thumbnailBytes, code: thumbnailCode, parameters: [])
         case 0x1009: return ok(objects[parameters[0]]!.bytes)
         case 0x9804:
             let id = parameters[0]; let old = objects[id]!
@@ -170,6 +173,16 @@ struct SystemServiceChecks {
         let devices = try await service.scan()
         _ = try await service.connect(devices[0])
         let fake = SystemPTPLink.latest!
+        let testPhoto = RemoteItem(id: 42, parentID: 0, storageID: 1, name: "large.jpg", size: 40_000_000, modified: nil, isDirectory: false)
+        let thumb = try await service.thumbnail(testPhoto)
+        try expect(thumb == fake.thumbnailBytes, "Thumbnail request did not return device thumbnail data")
+        fake.thumbnailCode = 0x2002
+        let absent = try await service.thumbnail(testPhoto)
+        try expect(absent == nil, "AOSP missing-thumbnail response must not trigger an original read")
+        fake.thumbnailCode = 0x2001
+        fake.thumbnailBytes = Data(repeating: 0, count: 2 * 1024 * 1024 + 1)
+        let oversized = try await service.thumbnail(testPhoto)
+        try expect(oversized == nil, "Oversized thumbnail must be rejected")
         try await service.upload(localURL: input, storageID: 1, parentID: UInt32.max, progress: { _ in })
         let root = try await service.list(storageID: 1, parentID: UInt32.max)
         let folder = root.first { $0.name == "RoundTrip" }!

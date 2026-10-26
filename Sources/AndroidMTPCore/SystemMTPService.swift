@@ -111,6 +111,23 @@ public actor SystemMTPService {
         if let link { await link.disconnect() }
     }
 
+    public func thumbnail(_ item: RemoteItem) async throws -> Data? {
+        try beginOperation()
+        defer { busy = false }
+        try requireConnection()
+        try checkCancelled()
+        guard !item.isDirectory, operations.contains(0x100A) else { return nil }
+        let result = try await getLink().transact(code: 0x100A, parameters: [item.id], data: nil)
+        try checkCancelled()
+        // AOSP returns GeneralError when its database has no thumbnail.
+        if [UInt16(0x2002), 0x2005, 0x2010].contains(result.code) { return nil }
+        guard result.code == 0x2001 else {
+            throw AndroidMTPError.message("Could not read the photo preview (MTP \(String(format: "0x%04X", result.code))).")
+        }
+        guard !result.data.isEmpty, result.data.count <= 2 * 1024 * 1024 else { return nil }
+        return result.data
+    }
+
     public func list(storageID: UInt32, parentID: UInt32) async throws -> [RemoteItem] {
         try beginOperation()
         defer { busy = false }

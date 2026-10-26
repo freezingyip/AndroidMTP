@@ -1,6 +1,6 @@
 # AndroidMTP
 
-A native Mac file browser for Android phones. Standard USB **MTP / File transfer** is the default connection; **USB debugging is not required** for normal file access. Version 0.3.0 adds a photo gallery and uses the macOS device service so Photos and OneDrive can keep running.
+A native Mac file browser for Android phones. Standard USB **MTP / File transfer** is the default connection; **USB debugging is not required** for normal file access. Version 0.3.1 adds a thumbnail-first photo gallery and uses the macOS device service so Photos and OneDrive can keep running.
 
 ## Product direction
 
@@ -40,7 +40,9 @@ Standard MTP only exposes the storage Android makes available. Protected app dat
 
 Double-click a photo, select it and press Space, or choose **Photo Gallery** in the toolbar. Browse the current folder's photos with the previous/next buttons, arrow keys, or thumbnail strip. Right-click a photo for **Preview photo gallery** or **Open**; **Open on Mac** uses the Mac's default image app.
 
-Previews copy photos to a temporary local cache, leaving phone originals unchanged. Thumbnails load in the background, one USB read at a time. The first 200 photos are prefetched; any other photo loads when selected. Individual previews are limited to 100 MB; larger files can be downloaded normally. The gallery keeps roughly 512 MB of originals plus small thumbnails; files explicitly opened in another app remain temporarily available for that app. Other gallery copies are removed when the gallery closes. Preview images are downsampled and show the first frame of animated images.
+The gallery requests small thumbnails directly from the phone and displays previews up to 640 pixels. If the phone has no thumbnail, only originals up to 512 KB are read automatically. For larger photos without a thumbnail, choose **Open on Mac** to download the original explicitly. Phone originals remain unchanged.
+
+Preview reads run one at a time; the first 200 thumbnails are prefetched. The original-file cache targets 512 MB, excluding files retained for a receiving Mac app. Unused temporary files are removed when the gallery closes. Animated images show their first frame.
 
 ## References
 

@@ -80,6 +80,10 @@ public actor DeviceFileService: MTPTransport {
         try await connectedTransport().download(item, to: localURL, progress: progress)
     }
 
+    public func thumbnail(_ item: RemoteItem) async throws -> Data? {
+        try await connectedTransport().thumbnail(item)
+    }
+
     private func connectedTransport() throws -> any MTPTransport {
         guard let active else { throw AndroidMTPError.message("Connect an Android device first.") }
         return active

@@ -15,6 +15,7 @@ actor GalleryTransport: MTPTransport {
     func rename(_ item: RemoteItem, to name: String) async throws {}
     func delete(_ item: RemoteItem) async throws {}
     func upload(localURL: URL, storageID: UInt32, parentID: UInt32, progress: @escaping @Sendable (TransferUpdate) -> Void) async throws {}
+    func thumbnail(_ item: RemoteItem) async throws -> Data? { item.id == 5 ? bytes : nil }
     func download(_ item: RemoteItem, to url: URL, progress: @escaping @Sendable (TransferUpdate) -> Void) async throws {
         calls += 1; active += 1; maximumActive = max(maximumActive, active)
         defer { active -= 1 }
@@ -56,10 +57,19 @@ actor GalleryTransport: MTPTransport {
         precondition(failures.image == nil && !failures.message.isEmpty)
         failures.select(1)
         try await Task.sleep(nanoseconds: 50_000_000)
-        precondition(failures.message.contains("100 MB"))
+        precondition(failures.message.contains("No small preview"))
         await failures.finish()
         let afterFailures = await transport.calls
-        precondition(afterFailures == 3, "Oversized photos must not be fetched automatically")
+        precondition(afterFailures == 3, "Large originals must not be fetched automatically")
+
+        let large = photo(5, "camera.jpg", size: 40 * 1024 * 1024)
+        let thumbnailOnly = PhotoGalleryModel(photos: [large], selected: large, service: transport)
+        thumbnailOnly.start()
+        for _ in 0..<100 where thumbnailOnly.image == nil { try await Task.sleep(nanoseconds: 10_000_000) }
+        precondition(thumbnailOnly.image != nil, "Large photos should preview from device thumbnails")
+        await thumbnailOnly.finish()
+        let afterThumbnail = await transport.calls
+        precondition(afterThumbnail == afterFailures, "Previewing a large photo must not download its original")
 
         let closing = PhotoGalleryModel(photos: [first, second], selected: first, service: transport)
         closing.start()
@@ -67,6 +77,6 @@ actor GalleryTransport: MTPTransport {
         await closing.finish()
         let active = await transport.active
         precondition(active == 0, "Dismissal must await the current read before returning the USB session")
-        print("Gallery checks passed: image decoding, Unicode extensions, rapid selection, serialized reads, cache reuse, invalid images, size limits, and safe dismissal.")
+        print("Gallery checks passed: image decoding, Unicode extensions, rapid selection, serialized reads, cache reuse, invalid images, thumbnail-only reads of large photos, small-file fallback, and safe dismissal.")
     }
 }

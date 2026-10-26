@@ -1,5 +1,11 @@
 # Development status
 
+## Version 0.3.1 — faster, smaller previews, 26 October 2026
+
+Gallery previews now use the standard MTP GetThumb operation (0x100A), forwarded by the transport coordinator. Missing thumbnails do not trigger a large original download. Only files up to 512 KB have an automatic original fallback; Open on Mac explicitly downloads other originals. Previews are downsampled to 640 pixels and the gallery window is smaller.
+
+Automated checks cover a 40 MB photo preview with zero original downloads, missing and oversized device thumbnails, tiny-file fallback, selection changes, and safe dismissal. Build and transfer regression checks pass. After updating, the actual app reconnected to the X300 Pro and displayed a phone screenshot in the revised gallery. The implementation follows Android's GetThumb handling, including its GeneralError response for absent thumbnails: https://android.googlesource.com/platform/frameworks/av/+/7bca01a47344db605adc927f7b12b4e60310177f/media/mtp/MtpServer.cpp
+
 ## Version 0.3.0 — photo gallery, 26 October 2026
 
 Added an in-app photo gallery with a large image preview, thumbnail strip, previous/next navigation, Space shortcut, double-clicking a photo name, and Open on Mac. Photo reads share the existing MTP transport and run serially. Closing the gallery waits for the current read before enabling other file actions. No phone originals are changed.

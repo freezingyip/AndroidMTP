@@ -42,7 +42,7 @@ final class PhotoGalleryModel: ObservableObject {
     func select(_ next: Int) {
         guard photos.indices.contains(next), !stopped else { return }
         index = next
-        image = nil
+        image = thumbnails[current.id]
         message = errors[current.id] ?? "Loading photo…"
         openWhenReady = nil
         start()
@@ -61,59 +61,66 @@ final class PhotoGalleryModel: ObservableObject {
         defer { worker = nil; loading = false }
         do { try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true) }
         catch { message = error.localizedDescription; return }
-        // One worker owns the MTP session. Selection changes take priority after the current read.
         while !stopped {
-            let selected = current
-            if image == nil, let url = originals[selected.id] {
-                let decoded = await Self.decode(url, pixels: 2200)
-                guard !stopped else { return }
-                if current.id != selected.id { continue }
-                image = decoded
-                message = image == nil ? "This image format could not be displayed." : ""
-            }
-            let target: RemoteItem?
-            if originals[selected.id] == nil && !failures.contains(selected.id) { target = selected }
-            else { target = photos.prefix(200).first { thumbnails[$0.id] == nil && !failures.contains($0.id) } }
-            guard let item = target else { return }
-            // Avoid silently reading exceptionally large files just to make a preview.
-            guard item.size <= 100 * 1024 * 1024 else {
-                failures.insert(item.id)
-                errors[item.id] = "This photo is larger than 100 MB. Use Download to Mac to open it."
-                if item.id == current.id { message = errors[item.id]! }
+            if let id = openWhenReady, let item = photos.first(where: { $0.id == id }) {
+                loading = true
+                message = "Opening original photo on Mac…"
+                do {
+                    let url = try await original(item)
+                    guard !stopped else { return }
+                    NSWorkspace.shared.open(url)
+                    opened.insert(id)
+                } catch { if !stopped { message = error.localizedDescription } }
+                openWhenReady = nil
                 continue
             }
+            image = thumbnails[current.id]
+            let target = !failures.contains(current.id) && thumbnails[current.id] == nil
+                ? current : photos.prefix(200).first { thumbnails[$0.id] == nil && !failures.contains($0.id) }
+            guard let item = target else { return }
             loading = item.id == current.id
-            let url = directory.appendingPathComponent(UUID().uuidString).appendingPathExtension((item.name as NSString).pathExtension)
             do {
-                try await service.download(item, to: url, progress: { _ in })
-                guard !stopped else { try? FileManager.default.removeItem(at: url); return }
-                originals[item.id] = url
-                sizes[item.id] = item.size
-                if let thumbnail = await Self.decode(url, pixels: 180) { thumbnails[item.id] = thumbnail }
-                else { failures.insert(item.id); errors[item.id] = "This image format could not be displayed. Try Open on Mac." }
-                if item.id == current.id {
-                    let decoded = await Self.decode(url, pixels: 2200)
-                    if item.id == current.id { image = decoded }
-                    message = image == nil ? "This image format could not be displayed. Try Open on Mac." : ""
+                var bytes = try await service.thumbnail(item)
+                guard !stopped else { return }
+                // Some Android files have no generated thumbnail. Only read tiny originals
+                // automatically; large originals always require an explicit Open on Mac.
+                if bytes == nil, item.size <= 512 * 1024 {
+                    bytes = try Data(contentsOf: await original(item))
                 }
-                if openWhenReady == item.id { NSWorkspace.shared.open(url); opened.insert(item.id); openWhenReady = nil }
-                // Keep disk use bounded; thumbnails remain available when an original is evicted.
-                while sizes.values.reduce(0, +) > 512 * 1024 * 1024,
-                      let victim = originals.keys.first(where: { $0 != current.id && $0 != openWhenReady && !opened.contains($0) }) {
-                    if let old = originals.removeValue(forKey: victim) { try? FileManager.default.removeItem(at: old) }
-                    sizes.removeValue(forKey: victim)
+                guard !stopped else { return }
+                if let bytes, let preview = await Self.decode(bytes, pixels: 640) {
+                    thumbnails[item.id] = preview
+                    if current.id == item.id { image = preview; message = "" }
+                } else {
+                    failures.insert(item.id)
+                    errors[item.id] = "No small preview is available. Choose Open on Mac to load the original photo."
+                    if current.id == item.id { message = errors[item.id]! }
                 }
             } catch {
                 failures.insert(item.id)
                 errors[item.id] = error.localizedDescription
-                if item.id == current.id { message = error.localizedDescription }
+                if current.id == item.id { message = error.localizedDescription }
             }
         }
     }
 
-    private static func decode(_ url: URL, pixels: Int) async -> NSImage? {
+    private func original(_ item: RemoteItem) async throws -> URL {
+        if let cached = originals[item.id] { return cached }
+        let url = directory.appendingPathComponent(UUID().uuidString).appendingPathExtension((item.name as NSString).pathExtension)
+        try await service.download(item, to: url, progress: { _ in })
+        originals[item.id] = url
+        sizes[item.id] = item.size
+        while sizes.values.reduce(0, +) > 512 * 1024 * 1024,
+              let victim = originals.keys.first(where: { $0 != item.id && !opened.contains($0) }) {
+            if let old = originals.removeValue(forKey: victim) { try? FileManager.default.removeItem(at: old) }
+            sizes.removeValue(forKey: victim)
+        }
+        return url
+    }
+
+    private static func decode(_ data: Data, pixels: Int) async -> NSImage? {
         let result: CGImage? = await Task.detached(priority: .utility) {
-            guard let source = CGImageSourceCreateWithURL(url as CFURL, nil),
+            guard let source = CGImageSourceCreateWithData(data as CFData, nil),
                   let cg = CGImageSourceCreateThumbnailAtIndex(source, 0, [
                     kCGImageSourceCreateThumbnailFromImageAlways: true,
                     kCGImageSourceCreateThumbnailWithTransform: true,
@@ -155,7 +162,8 @@ struct PhotoGalleryView: View {
             ZStack {
                 Color.black.opacity(0.85)
                 if let image = model.image {
-                    Image(nsImage: image).resizable().scaledToFit().padding(16)
+                    Image(nsImage: image).resizable().scaledToFit()
+                        .frame(maxWidth: 640, maxHeight: 420).padding(16)
                         .accessibilityLabel("Photo preview: \(model.current.name)")
                 } else {
                     VStack(spacing: 12) {
@@ -191,7 +199,7 @@ struct PhotoGalleryView: View {
                 }.padding(10)
             }.frame(height: 112)
         }
-        .frame(minWidth: 700, idealWidth: 960, minHeight: 520, idealHeight: 720)
+        .frame(minWidth: 600, idealWidth: 760, minHeight: 440, idealHeight: 600)
         .onMoveCommand { direction in
             if direction == .left { model.select(model.index - 1) }
             if direction == .right { model.select(model.index + 1) }
