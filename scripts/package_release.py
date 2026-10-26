@@ -2,6 +2,7 @@
 """Package an already-built app and verified dependency sources for GitHub."""
 import hashlib
 import json
+import os
 import plistlib
 import shutil
 import subprocess
@@ -9,7 +10,7 @@ import zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-APP = ROOT / "build/AndroidMTP.app"
+APP = ROOT / "build" / ("portable" if os.environ.get("ANDROIDMTP_PORTABLE_BUILD") == "1" else "") / "AndroidMTP.app"
 
 
 def run(*args):
@@ -26,8 +27,6 @@ def main():
         path = sources / dependency["archive"]
         if not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest() != dependency["sha256"]:
             raise SystemExit(f"Download the verified corresponding source: {dependency['url']} → {path}")
-        if not (sources / f"{dependency['name']}-homebrew.rb").is_file():
-            raise SystemExit("Include the Homebrew build formulas matching the bundled libraries.")
     stage = output / "stage"
     stage.mkdir(exist_ok=True)
     staged_app = stage / APP.name
@@ -49,11 +48,22 @@ def main():
     with zipfile.ZipFile(source_archive, "w", zipfile.ZIP_DEFLATED) as archive:
         for path in sorted(sources.iterdir()):
             archive.write(path, f"dependency-sources/{path.name}")
-        for path in [ROOT / "docs/DEPENDENCIES.md", ROOT / "docs/dependencies.json", *sorted((ROOT / "licenses").iterdir())]:
+        for path in [ROOT / "docs/DEPENDENCIES.md", ROOT / "docs/dependencies.json", ROOT / "scripts/build_release_dependencies.py", *sorted((ROOT / "licenses").iterdir())]:
             archive.write(path, f"dependency-sources/{path.name}")
+    installer = output / "installer"
+    if installer.exists():
+        shutil.rmtree(installer)
+    installer.mkdir()
+    run("/usr/bin/ditto", "--norsrc", str(staged_app), str(installer / staged_app.name))
+    (installer / "Applications").symlink_to("/Applications", target_is_directory=True)
+    shutil.copy2(ROOT / "assets/Install AndroidMTP.html", installer / "Install AndroidMTP.html")
+    disk_image = output / f"AndroidMTP-{version}.dmg"
+    run("/usr/bin/hdiutil", "create", "-volname", "AndroidMTP", "-srcfolder", str(installer),
+        "-fs", "HFS+", "-format", "UDZO", "-ov", str(disk_image))
+    run("/usr/bin/hdiutil", "verify", str(disk_image))
     checksums = output / "SHA256SUMS.txt"
-    checksums.write_text("".join(f"{hashlib.sha256(path.read_bytes()).hexdigest()}  {path.name}\n" for path in [app_archive, source_archive]))
-    print(f"Prepared {app_archive.name}, {source_archive.name}, and {checksums.name}")
+    checksums.write_text("".join(f"{hashlib.sha256(path.read_bytes()).hexdigest()}  {path.name}\n" for path in [disk_image, app_archive, source_archive]))
+    print(f"Prepared {disk_image.name}, {app_archive.name}, {source_archive.name}, and {checksums.name}")
 
 
 if __name__ == "__main__":

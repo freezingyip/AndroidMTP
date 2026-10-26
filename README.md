@@ -2,7 +2,7 @@
 
 <p align="center"><img src="assets/AndroidMTP-Icon.png" alt="AndroidMTP app icon" width="144"></p>
 
-A native Mac file browser for Android phones. Standard USB **MTP / File transfer** is the default connection; **USB debugging is not required** for normal file access. Version 0.4.1 includes Finder copy/paste transfers, a thumbnail-first photo gallery, and uses the macOS device service so Photos and OneDrive can keep running.
+A native Mac file browser for Android phones. Standard USB **MTP / File transfer** is the default connection; **USB debugging is not required** for normal file access. Version 0.5.0 includes Finder copy/paste transfers, a thumbnail-first photo gallery, and uses the macOS device service so Photos and OneDrive can keep running.
 
 ## Features
 
@@ -14,11 +14,19 @@ A native Mac file browser for Android phones. Standard USB **MTP / File transfer
 - Offer extra ADB tools separately, only when the user explicitly chooses them and authorizes their computer on Android.
 - Keep transfers local. No account, cloud service, or phone companion app.
 
-## Download
+## Install on your Mac
 
-Get the app from [GitHub Releases](https://github.com/freezingyip/AndroidMTP/releases). Version **0.4.1 is a development prerelease for Apple Silicon Macs running macOS 27.0 or newer**. This specific build inherits its minimum system version from its bundled Homebrew libraries. It is ad hoc signed and **not notarized**, so macOS may block launching the download. It is not a general-purpose signed macOS release yet.
+### [Download AndroidMTP for Mac](https://github.com/freezingyip/AndroidMTP/releases/download/v0.5.0/AndroidMTP-0.5.0.dmg)
 
-For other Macs, build from source using the instructions below; the source targets macOS 13+, while your installed libraries and toolchain determine the actual minimum version. Intel builds are not yet verified. No Homebrew installation is needed to run the downloadable bundle on a compatible Mac.
+1. Open the downloaded **AndroidMTP-0.5.0.dmg**.
+2. Drag **AndroidMTP** onto **Applications**.
+3. Open **Applications → AndroidMTP** and connect your phone in USB File transfer mode.
+
+**Apple Silicon Mac · macOS 13 or newer · No Homebrew or Terminal commands.** The app and bundled libraries target macOS 13; the current live verification is on macOS 27. Intel Macs and older macOS installations have not yet been verified.
+
+This preview is not notarized because the project does not yet have a Developer ID certificate. If macOS blocks it and you choose to trust the download, go to **System Settings → Privacy & Security → Open Anyway** for AndroidMTP. See [Apple’s first-open instructions](https://support.apple.com/en-hk/102445). This is a one-time approval for this app.
+
+The ZIP, dependency sources, and checksums under [Releases](https://github.com/freezingyip/AndroidMTP/releases) are optional developer downloads; ordinary installation uses only the DMG above.
 
 ## Development
 
@@ -30,7 +38,7 @@ brew install libmtp pkgconf
 open build/AndroidMTP.app
 ```
 
-The build script builds the app and copies its MTP libraries into the local app bundle. The source targets macOS 13+, but the packaged app's minimum OS also follows the installed Homebrew libraries. This development bundle is built for this Mac. It uses ad-hoc signing; a Developer ID signed and notarized release is future work.
+The build script builds the app and copies its MTP libraries into the local app bundle. The source targets macOS 13+, but the packaged app's minimum OS also follows the installed Homebrew libraries. The default development build follows the installed libraries. `scripts/build_portable.sh` builds libusb/libmtp from the verified source archives for macOS 13 and produces `build/portable/AndroidMTP.app`; it needs Python 3.12+, native pkg-config, and the dependency source archives described in `docs/DEPENDENCIES.md`. Set `ANDROIDMTP_PORTABLE_BUILD=1` when running `scripts/package_release.py` to package that build, including the drag-to-Applications DMG. Developer ID signing and notarization remain future work.
 
 Run `./scripts/test.sh` for hardware-free checks of file safety, atomic download completion, cancellation, 64-bit values, PTP codecs, transport routing, recursive chunked transfers, ADB parsing, APK preflight, and gallery decoding, selection, caching, dismissal, and clipboard transfers. Clipboard tests require a local macOS login session with access to the pasteboard service. The optional `./scripts/test.sh --xctest` suite needs an Xcode toolchain with XCTest.
 

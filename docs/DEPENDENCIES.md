@@ -2,15 +2,17 @@
 
 The preferred MTP connection uses the macOS ImageCaptureCore framework. The app also dynamically links libmtp and libusb for its direct-USB fallback. Their LGPL-2.1-or-later licenses are independent of the MIT license for AndroidMTP's original code.
 
-## Version 0.4.1
+## Version 0.5.0
 
 - libmtp 1.1.23, with Homebrew's `--disable-mtpz` configuration.
 - libusb 1.0.30.
-- The shipped libraries are arm64 Homebrew builds for macOS 27.0. Their binary install names were adjusted for an app-local Frameworks folder; library source code was not changed.
+- The shipped arm64 libraries are built from the verified upstream source archives for macOS 13.0 using `scripts/build_release_dependencies.py`. The build sets `ac_cv_func_pipe2=no` so the macOS 27 SDK does not introduce a dependency on the newer pipe2 API. It uses libusb’s existing pipe/fcntl implementation. No library source code was changed. Install names are adjusted for the app-local Frameworks folder.
 
-The corresponding-source ZIP is published alongside the app at [the v0.4.1 prerelease](https://github.com/freezingyip/AndroidMTP/releases/tag/v0.4.1). It contains both complete upstream release source archives, the Homebrew build formulas used for those installed versions, the dependency manifest/checksums, this document, and license texts. `dependencies.json` records the upstream download URLs and SHA-256 values. The app ZIP and source ZIP are available from the same release.
+The corresponding-source ZIP is published alongside the app at [the v0.5.0 prerelease](https://github.com/freezingyip/AndroidMTP/releases/tag/v0.5.0). It contains both complete upstream release source archives, the exact release dependency build script, the dependency manifest/checksums, this document, and license texts. `dependencies.json` records the upstream download URLs and SHA-256 values. The app ZIP and source ZIP are available from the same release.
 
 ## Build or replace the shared libraries
+
+Put the source archives listed in `dependencies.json` in `build/release/v0.5.0/dependency-sources/` and run `scripts/build_portable.sh` to reproduce the macOS 13 build. The helper needs Python 3.12 or newer and pkg-config. It does not download or modify system libraries.
 
 For an ordinary source build, install native Homebrew dependencies and run `scripts/build.sh`. Its packaging step copies the linked libraries into `AndroidMTP.app/Contents/Frameworks` and rewrites their dependency paths. The complete original app source and build scripts are available in this repository.
 
@@ -29,7 +31,7 @@ make
 make install
 ```
 
-Use native Apple Silicon tools for the supplied arm64 app, or rebuild the entire app and libraries for your target architecture. Further compiler/deployment settings depend on that target. The source archives contain the full upstream build documentation; the included Homebrew formulas record the distributed builds' additional configuration.
+Use native Apple Silicon tools for the supplied arm64 app, or rebuild the entire app and libraries for your target architecture. Further compiler/deployment settings depend on that target. The source archives contain the full upstream build documentation; the included release dependency build script records the distributed builds' compiler, deployment, and configure settings.
 
 To use your replacement libraries with a copy of the supplied app:
 

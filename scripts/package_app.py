@@ -10,7 +10,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parent.parent
-APP = ROOT / "build" / "AndroidMTP.app"
+APP = ROOT / "build" / ("portable" if os.environ.get("ANDROIDMTP_PORTABLE_BUILD") == "1" else "") / "AndroidMTP.app"
 
 
 def run(*args):
@@ -20,6 +20,10 @@ def run(*args):
 def dependencies(path):
     lines = run("/usr/bin/otool", "-L", str(path)).splitlines()[1:]
     return [line.strip().split(" (", 1)[0] for line in lines]
+
+
+def bundled_dependency(path):
+    return path.startswith("/") and not path.startswith(("/usr/lib/", "/System/Library/", "/Library/Apple/"))
 
 
 def minimum_os(path):
@@ -48,7 +52,7 @@ def main():
     while pending:
         source = pending.pop()
         for dependency in dependencies(source):
-            if not dependency.startswith(("/opt/homebrew/", "/usr/local/")):
+            if not bundled_dependency(dependency):
                 continue
             path = Path(dependency).resolve()
             if path in originals:
@@ -67,7 +71,7 @@ def main():
         if destination != executable:
             subprocess.run(["/usr/bin/install_name_tool", "-id", f"@rpath/{destination.name}", str(destination)], check=True)
         for dependency in dependencies(source):
-            if not dependency.startswith(("/opt/homebrew/", "/usr/local/")):
+            if not bundled_dependency(dependency):
                 continue
             name = originals[Path(dependency).resolve()]
             prefix = "@executable_path/../Frameworks/" if destination == executable else "@loader_path/"
@@ -81,8 +85,10 @@ def main():
     shutil.copy2(ROOT / "LICENSE", resources / "LICENSE.txt")
     for source in originals:
         copying = source.parent.parent / "COPYING"
-        if copying.exists():
-            shutil.copy2(copying, notices / f"{source.stem}-COPYING.txt")
+        if not copying.exists():
+            name = "libmtp" if source.name.startswith("libmtp") else "libusb"
+            copying = ROOT / "licenses" / f"{name}-COPYING.txt"
+        shutil.copy2(copying, notices / f"{source.stem}-COPYING.txt")
     minimum = max([minimum_os(binary)] + [minimum_os(source) for source in originals])
     with (APP / "Contents" / "Info.plist").open("wb") as handle:
         plistlib.dump({
@@ -92,8 +98,8 @@ def main():
             "CFBundleExecutable": "AndroidMTP",
             "CFBundlePackageType": "APPL",
             "CFBundleIconFile": "AndroidMTP.icns",
-            "CFBundleShortVersionString": "0.4.1",
-            "CFBundleVersion": "6",
+            "CFBundleShortVersionString": "0.5.0",
+            "CFBundleVersion": "7",
             "LSMinimumSystemVersion": ".".join(map(str, minimum)),
             "NSHighResolutionCapable": True,
             "NSSupportsAutomaticGraphicsSwitching": True,

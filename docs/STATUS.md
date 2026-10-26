@@ -1,5 +1,13 @@
 # Development status
 
+## Version 0.5.0 — easier installation, 26 October 2026
+
+Added a drag-to-Applications DMG with a local installation guide and a direct download link at the top of the README. The original libusb/libmtp release sources are rebuilt for macOS 13 instead of shipping the macOS 27 Homebrew binaries. The libusb build explicitly uses its existing pipe/fcntl fallback rather than the pipe2 API introduced in the newer SDK. Release packaging supports the isolated portable bundle, includes required dependency notices, and verifies the DMG.
+
+The mounted DMG, Applications shortcut, local guide, app copy, code signatures, macOS 13 deployment targets, and absence of external development-library paths passed verification. The regression suite also passed against the rebuilt libraries.
+
+The release still uses ad hoc signing: no Developer ID identity is present, and the user confirmed they do not have Apple Developer Program membership. First opening may therefore require the app-specific approval documented by Apple; no security setting is changed automatically. macOS 13 is the deployment target, not a claim that the app has been tested on every older macOS version.
+
 ## Version 0.4.1 — app icon, 26 October 2026
 
 Added original AI-generated mint-and-teal phone/folder icon artwork, a complete ICNS bundle of 16–1024 pixel representations, and its reproducible sizing script. Packaging copies the icon into app resources and sets CFBundleIconFile; launch also applies the icon explicitly so the running Dock icon refreshes. Artwork and prompt are committed under `assets/`. The 32-pixel representation was visually checked, the ICNS structure validated, and the release bundle built and signed successfully.
