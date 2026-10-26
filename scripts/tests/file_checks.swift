@@ -14,6 +14,15 @@ struct FileChecks {
     }
 
     static func main() async throws {
+        // Native API boundaries have different root conventions; preserve both independently.
+        try require(amtp_folder_parent_id(UInt32.max) == UInt32.max, "mkdir keeps explicit root handle")
+        try require(amtp_folder_parent_id(0) == UInt32.max, "mkdir normalizes zero root to explicit handle")
+        try require(amtp_file_parent_id(UInt32.max) == 0, "file sends use documented zero root")
+        try require(amtp_file_parent_id(0) == 0, "file sends retain zero root")
+        for folderID: UInt32 in [1, 42, 0x12345678] {
+            try require(amtp_folder_parent_id(folderID) == folderID, "mkdir preserves a real parent object")
+            try require(amtp_file_parent_id(folderID) == folderID, "file sends preserve a real parent object")
+        }
         let manager = FileManager.default
         let temporary = manager.temporaryDirectory.appendingPathComponent("AndroidMTP-checks-\(UUID().uuidString)")
         try manager.createDirectory(at: temporary, withIntermediateDirectories: false)

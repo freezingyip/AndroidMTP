@@ -19,9 +19,17 @@ Optional: ADB device authorization status and installation of individual APK fil
 
 ## Device test
 
-The app detected the connected Vivo V11. The first session attempt was blocked: macOS reported that `ptpcamerad` (Apple's photo-import service) exclusively owns the MTP USB interface. A separate read-only libmtp diagnostic reproduced access denied. Storage browsing and transfers are not yet verified on the phone.
+The app connected to the Vivo V11 and browsed its internal storage using standard USB MTP. Apple’s photo-import service (`ptpcamerad`) initially owned the interface; the user authorized closing Photos, restarting the camera service, and temporarily closing/reopening OneDrive for testing. OneDrive was reopened and its process verified after testing; the camera service was also verified running normally. No permanent service or security settings were changed. An attempted temporary service unload was refused by macOS System Integrity Protection.
 
-The app now shows connection failures directly inside its connection sheet and gives photo-importer conflict guidance. Permission to close Photos and restart its camera connection service has been requested. No phone files were changed during verification.
+The live test found and fixed a root-folder creation bug: libmtp's folder-creation and file-upload APIs use different root-parent conventions. Regression checks now cover both.
+
+A hardware round-trip using the app's MTP service passed: recursive upload, folder rename, recursive download, SHA-256 comparisons for three files (45,126 bytes), a Unicode filename, an empty directory, and rejection of an existing local destination. Test evidence is saved locally at `.build/device-test/results/9881E43A-4D85-43EA-8326-8C0067CADDED/result.json`.
+
+The synthetic test folder remains on Android as `AndroidMTP-Test-20261026-7ffab5-verified`. No pre-existing phone files were changed or deleted.
+
+## Interface verification
+
+macOS 27 accessibility inspection exposed a framework recursion crash during dismissal of the SwiftUI connection sheet. The connection controls now appear inline in the main window, with stable accessibility labels and preserved file-row accessibility. The updated window and inline controls were inspected successfully. The phone was no longer detected in MTP mode during the final check, so a full graphical reconnect after this final UI change remains to be rechecked. The live transfer-engine test above passed independently of the graphical interface.
 
 ## Known limits
 

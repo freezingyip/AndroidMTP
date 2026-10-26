@@ -32,6 +32,10 @@ typedef struct {
 
 typedef void (*AMTPProgress)(uint64_t completed, uint64_t total, void *context);
 
+/* libmtp uses different public root-parent conventions for mkdir and file sends. */
+uint32_t amtp_folder_parent_id(uint32_t parent_id);
+uint32_t amtp_file_parent_id(uint32_t parent_id);
+
 /* Returned arrays, names, and error strings are owned by the caller. */
 int amtp_scan(AMTPDevice **devices, size_t *count, char **error);
 void amtp_free_devices(AMTPDevice *devices, size_t count);

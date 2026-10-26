@@ -15,16 +15,26 @@ struct BrowserView: View {
                     breadcrumbs
                     Divider()
                     fileBrowser
+                } else if model.showConnectionSheet {
+                    VStack {
+                        Spacer(minLength: 0)
+                        connectionPanel
+                        Spacer(minLength: 0)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     welcome
                 }
                 Divider()
                 statusBar
             }
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel("Android file browser")
             .navigationTitle(model.isConnected ? model.currentFolderName : "AndroidMTP")
             .toolbar { toolbar }
         }
-        .sheet(isPresented: $model.showConnectionSheet) { connectionSheet }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Android file transfer")
         .sheet(isPresented: $model.showAdvancedSheet) { ADBPanel() }
         .sheet(item: $model.namePrompt) { prompt in nameSheet(prompt) }
         .alert("Couldn’t complete the operation", isPresented: Binding(
@@ -48,6 +58,7 @@ struct BrowserView: View {
                     .font(.system(size: 28))
                     .foregroundStyle(.green)
                     .frame(width: 35)
+                    .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 3) {
                     Text(model.activeDevice?.name ?? "Your Android")
                         .font(.headline)
@@ -87,6 +98,8 @@ struct BrowserView: View {
                             .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
+                        .accessibilityLabel(storage.name)
+                        .accessibilityValue("\(BrowserModel.byteCount(storage.freeSpace)) free")
                         .disabled(!model.canAct)
                         .listRowBackground(model.storageID == storage.id && model.path.isEmpty ? Color.accentColor.opacity(0.12) : Color.clear)
                     }
@@ -102,6 +115,7 @@ struct BrowserView: View {
                                     .contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
+                            .accessibilityLabel("Open \(folder.name == "DCIM" ? "Camera" : folder.name)")
                             .disabled(!model.canAct)
                             .padding(.vertical, 3)
                         }
@@ -121,6 +135,8 @@ struct BrowserView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(16)
         }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Device and storage")
     }
 
     private var welcome: some View {
@@ -156,6 +172,7 @@ struct BrowserView: View {
                     .padding(.vertical, 5)
             }
             .buttonStyle(.borderedProminent)
+            .accessibilityLabel("Connect Android")
             .controlSize(.large)
             .disabled(model.isBusy)
             Text("Internal storage and SD cards · Files and folders · No account")
@@ -165,6 +182,8 @@ struct BrowserView: View {
         }
         .padding(30)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Android connection setup")
     }
 
     private func setupStep(_ number: String, _ text: String) -> some View {
@@ -190,9 +209,11 @@ struct BrowserView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
                     Button(model.currentStorage?.name ?? "Storage") { Task { await model.goToBreadcrumb(0) } }
+                        .accessibilityLabel("Open storage root")
                     ForEach(Array(model.path.enumerated()), id: \.element.id) { index, folder in
                         Image(systemName: "chevron.right").font(.caption2).foregroundStyle(.tertiary)
                         Button(folder.name) { Task { await model.goToBreadcrumb(index + 1) } }
+                            .accessibilityLabel("Open \(folder.name)")
                     }
                 }
                 .buttonStyle(.borderless)
@@ -205,6 +226,8 @@ struct BrowserView: View {
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 12)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Folder location")
     }
 
     private var fileBrowser: some View {
@@ -214,12 +237,16 @@ struct BrowserView: View {
                     Image(systemName: item.isDirectory ? "folder.fill" : "doc")
                         .foregroundStyle(item.isDirectory ? Color.accentColor : Color.secondary)
                         .frame(width: 21)
+                        .accessibilityHidden(true)
                     Text(item.name).lineLimit(1)
                 }
                 .contentShape(Rectangle())
                 .onTapGesture(count: 2) {
                     if item.isDirectory { Task { await model.openFolder(item) } }
                 }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel(item.name)
+                .accessibilityValue(item.isDirectory ? "Folder" : "File")
             }
             .width(min: 200, ideal: 420)
             TableColumn("Size") { item in
@@ -285,20 +312,26 @@ struct BrowserView: View {
             }
             return true
         }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Files in \(model.currentFolderName)")
     }
 
     @ToolbarContentBuilder
     private var toolbar: some ToolbarContent {
         ToolbarItemGroup(placement: .automatic) {
             Button(action: model.chooseUploads) { Label("Upload", systemImage: "arrow.up.doc") }
+                .accessibilityLabel("Upload to Android")
                 .help("Upload files or folders to Android (⌘U)")
                 .disabled(!model.canAct)
             Button(action: model.chooseDownloadDestination) { Label("Download", systemImage: "arrow.down.doc") }
+                .accessibilityLabel("Download to Mac")
                 .help("Download selected items to your Mac (⌘D)")
                 .disabled(!model.canAct || model.selection.isEmpty)
             Button(action: model.beginNewFolder) { Label("New Folder", systemImage: "folder.badge.plus") }
+                .accessibilityLabel("New folder")
                 .disabled(!model.canAct)
             Button { Task { await model.refresh() } } label: { Label("Refresh", systemImage: "arrow.clockwise") }
+                .accessibilityLabel("Refresh files")
                 .disabled(!model.canAct)
             Menu {
                 if model.isConnected {
@@ -312,6 +345,7 @@ struct BrowserView: View {
                 Divider()
                 Button("Optional debugging features…") { model.showAdvancedSheet = true }
             } label: { Label(model.isConnected ? "USB MTP" : "Connect", systemImage: "cable.connector") }
+                .accessibilityLabel("Device connection options")
                 .disabled(model.isBusy)
         }
         ToolbarItem(placement: .automatic) {
@@ -320,6 +354,7 @@ struct BrowserView: View {
                 TextField("Search this folder", text: $model.search)
                     .textFieldStyle(.plain)
                     .frame(width: 155)
+                    .accessibilityLabel("Search this folder")
             }
             .padding(7)
             .background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 7))
@@ -335,6 +370,7 @@ struct BrowserView: View {
                     VStack(alignment: .leading, spacing: 5) {
                         Text(model.transferName).font(.callout).lineLimit(1)
                         ProgressView(value: model.transferProgress).progressViewStyle(.linear)
+                            .accessibilityLabel("Transfer progress")
                     }
                     Text(model.transferBytes).font(.caption).foregroundStyle(.secondary).monospacedDigit()
                     Button("Cancel", action: model.cancelTransfers)
@@ -343,6 +379,7 @@ struct BrowserView: View {
             HStack(spacing: 8) {
                 if model.isBusy && !model.isTransferring {
                     ProgressView().controlSize(.small).scaleEffect(0.7).frame(width: 16, height: 16)
+                        .accessibilityLabel("Loading device contents")
                 } else {
                     Image(systemName: model.isConnected ? "circle.fill" : "circle")
                         .font(.system(size: 7))
@@ -359,9 +396,11 @@ struct BrowserView: View {
         .padding(.horizontal, 18)
         .padding(.vertical, 11)
         .background(.bar)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Transfer status")
     }
 
-    private var connectionSheet: some View {
+    private var connectionPanel: some View {
         VStack(alignment: .leading, spacing: 18) {
             Label("Connect your Android", systemImage: "cable.connector")
                 .font(.title2.weight(.semibold))
@@ -381,16 +420,21 @@ struct BrowserView: View {
                 Picker("Device", selection: $model.selectedDeviceID) {
                     ForEach(model.devices) { device in Text(device.name).tag(Optional(device.id)) }
                 }
+                .accessibilityLabel("Android device")
                 .disabled(model.isBusy)
             }
             HStack(spacing: 9) {
-                if model.isBusy { ProgressView().controlSize(.small) }
+                if model.isBusy {
+                    ProgressView().controlSize(.small)
+                        .accessibilityLabel("Connecting to Android")
+                }
                 Text(model.status)
                     .font(.callout)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            .accessibilityElement(children: .combine)
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel("Connection status")
             if let error = model.connectionError {
                 Label {
                     Text(error)
@@ -411,19 +455,23 @@ struct BrowserView: View {
                 .foregroundStyle(.secondary)
             HStack {
                 Button("Scan again") { Task { await model.scan() } }
+                    .accessibilityLabel("Scan for Android devices")
                     .disabled(model.isBusy)
                 Spacer()
                 Button("Cancel") { model.showConnectionSheet = false }
+                    .accessibilityLabel("Cancel connection")
                     .keyboardShortcut(.cancelAction)
                     .disabled(model.isBusy)
                 Button("Connect") { Task { await model.connectSelected() } }
+                    .accessibilityLabel("Connect selected Android device")
                     .keyboardShortcut(.defaultAction)
                     .disabled(model.isBusy || !model.devices.contains(where: { $0.id == model.selectedDeviceID }))
             }
         }
         .padding(26)
         .frame(width: 510)
-        .interactiveDismissDisabled(model.isBusy)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Connect Android device")
     }
 
     private func nameSheet(_ prompt: BrowserModel.NamePrompt) -> some View {

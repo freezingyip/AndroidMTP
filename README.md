@@ -24,6 +24,8 @@ The build script builds the app and copies its MTP libraries into the local app 
 
 Run `./scripts/test.sh` for hardware-free checks of file safety, atomic download completion, cancellation state, 64-bit progress, ADB parsing, and APK preflight. The optional `./scripts/test.sh --xctest` suite needs an Xcode toolchain with XCTest.
 
+For an optional live-device check, `./scripts/device-check.sh` prepares three harmless local files and builds the test executable. Close AndroidMTP and other MTP sessions, then run `.build/device-check/roundtrip .build/device-test` with exactly one unlocked phone connected. This explicitly uploads a small test folder, renames it, downloads it, checks file hashes, and leaves the test folder on Android. It does not delete or replace existing phone files.
+
 ## Connect a phone
 
 1. Connect an unlocked Android phone with a data-capable USB cable.
@@ -31,7 +33,7 @@ Run `./scripts/test.sh` for hardware-free checks of file safety, atomic download
 3. Close other MTP file browsers if they are using the same phone.
 4. In AndroidMTP, click **Connect**, scan, and choose the phone.
 
-If the phone is detected but will not open, Photos, Image Capture, or a photo-importing cloud client may already own its USB interface. Finish any imports, quit the conflicting app, unplug/reconnect the phone, and try again. See `docs/STATUS.md` for this Mac's verification results.
+If the phone is detected but will not open, Photos, Image Capture, or a photo-importing cloud client may already own its USB interface. Finish any imports, quit the conflicting app, unplug/reconnect the phone, and try again. Connection errors appear next to the connection controls. See `docs/STATUS.md` for this Mac's verification results, including the successful hardware round-trip.
 
 Standard MTP only exposes the storage Android makes available. Protected app data and restricted Android folders may remain inaccessible. Enabling ADB does not grant root or promise access to private app data.
 

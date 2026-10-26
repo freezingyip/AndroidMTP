@@ -59,6 +59,16 @@ static int valid_name(const char *name) {
     return name && name[0] && strcmp(name, ".") && strcmp(name, "..") && !strchr(name, '/');
 }
 
+uint32_t amtp_folder_parent_id(uint32_t parent_id) {
+    /* LIBMTP_Create_Folder forwards this handle unchanged; root is 0xffffffff. */
+    return parent_id == 0 ? LIBMTP_FILES_AND_FOLDERS_ROOT : parent_id;
+}
+
+uint32_t amtp_file_parent_id(uint32_t parent_id) {
+    /* Send_File_From_File_Descriptor documents zero for root and translates it internally. */
+    return parent_id == UINT32_MAX ? 0 : parent_id;
+}
+
 void amtp_free_error(char *error) { free(error); }
 
 int amtp_scan(AMTPDevice **devices, size_t *count, char **error) {
@@ -221,7 +231,7 @@ int amtp_create_folder(AMTPSession *session, const char *name,
     char *mutable_name = strdup(name);
     if (!mutable_name) { set_error(error, "Not enough memory to create a folder."); return -1; }
     uint32_t id = LIBMTP_Create_Folder(session->device, mutable_name,
-                                      parent_id == UINT32_MAX ? 0 : parent_id, storage_id);
+                                      amtp_folder_parent_id(parent_id), storage_id);
     free(mutable_name);
     if (!id) { device_error(session->device, error, "Could not create the folder."); return -1; }
     if (created_id) *created_id = id;
@@ -318,7 +328,7 @@ int amtp_upload(AMTPSession *session, const char *local_path, const char *remote
     if (!file->filename) {
         LIBMTP_destroy_file_t(file); close(fd); set_error(error, "Not enough memory to upload."); return -1;
     }
-    file->parent_id = parent_id == UINT32_MAX ? 0 : parent_id;
+    file->parent_id = amtp_file_parent_id(parent_id);
     file->storage_id = storage_id;
     file->filesize = (uint64_t)info.st_size;
     file->modificationdate = info.st_mtime;
