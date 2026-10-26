@@ -1,0 +1,4 @@
+module CAndroidMTP {
+    header "CAndroidMTP.h"
+    export *
+}
