@@ -8,8 +8,14 @@ private struct DeviceCheckManifest: Decodable {
 
 @main
 struct DeviceRoundtrip {
-    static func main() async {
-        let service = MTPService()
+    static func main() {
+        setbuf(stdout, nil)
+        Task { await run() }
+        RunLoop.main.run()
+    }
+
+    static func run() async {
+        let service = DeviceFileService()
         do {
             guard CommandLine.arguments.count == 2 else {
                 throw AndroidMTPError.message("Provide the project-local device-test directory.")
@@ -77,6 +83,7 @@ struct DeviceRoundtrip {
             print("Empty-folder preservation and existing-destination protection passed.")
             print("Test folder left on Android: \(renamed)")
             print("Evidence: \(resultDirectory.appendingPathComponent("result.json").path)")
+            exit(0)
         } catch {
             await service.disconnect()
             fputs("Device test stopped: \(error.localizedDescription)\n", stderr)

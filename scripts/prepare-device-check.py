@@ -18,7 +18,8 @@ source = base / "upload" / name
 (source / "nested" / "測試-📱.txt").write_text(
     "MTP file transfer: 中文 / café / 📱\n" * 300, encoding="utf-8"
 )
-(source / "sample.bin").write_bytes(bytes(range(256)) * 128)
+(source / "sample.bin").write_bytes(bytes(range(256)) * (5 * 4096))
+(source / "zero-byte.txt").write_bytes(b"")
 manifest = {
     str(path.relative_to(source)): hashlib.sha256(path.read_bytes()).hexdigest()
     for path in source.rglob("*") if path.is_file()
@@ -27,4 +28,4 @@ manifest = {
     json.dumps({"folder": name, "sha256": manifest}, ensure_ascii=False, indent=2),
     encoding="utf-8",
 )
-print(f"Prepared three synthetic files in {source}")
+print(f"Prepared {len(manifest)} synthetic files in {source}")

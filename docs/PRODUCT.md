@@ -18,7 +18,7 @@ Keep an explicit Advanced tools panel. The first optional feature is APK install
 
 ## Implementation boundaries
 
-- Native SwiftUI app, a Swift service layer, and a small C bridge to libmtp.
+- Native SwiftUI app and a Swift service layer. Prefer standard PTP/MTP commands through Apple's ImageCaptureCore service, with a small C/libmtp direct USB fallback.
 - Serialize operations within the MTP session; never issue concurrent requests against the same session.
 - Represent remote identity with device, storage, and object IDs. Displayed paths are UI breadcrumbs.
 - Read only the selected directory instead of scanning every file on the phone at launch.

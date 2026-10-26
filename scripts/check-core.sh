@@ -20,3 +20,12 @@ xcrun swiftc -swift-version 5 -module-cache-path "$TASK_ROOT/.build/ModuleCache"
     Sources/AndroidMTPCore/Models.swift Sources/AndroidMTPCore/ADBService.swift \
     scripts/tests/adb_checks.swift -o "$TASK_CHECK_DIR/adb-checks"
 "$TASK_CHECK_DIR/adb-checks"
+xcrun swiftc -swift-version 5 -module-cache-path "$TASK_ROOT/.build/ModuleCache" \
+    Sources/AndroidMTPCore/Models.swift Sources/AndroidMTPCore/PTPCodec.swift \
+    scripts/tests/ptp_checks.swift -o "$TASK_CHECK_DIR/ptp-checks"
+"$TASK_CHECK_DIR/ptp-checks"
+xcrun swiftc -swift-version 5 -module-cache-path "$TASK_ROOT/.build/ModuleCache" \
+    -I Sources/CAndroidMTP/include Sources/AndroidMTPCore/*.swift \
+    scripts/tests/transport_checks.swift "$TASK_CHECK_DIR/bridge.o" \
+    "${TASK_LINK_FLAGS[@]}" -o "$TASK_CHECK_DIR/transport-checks"
+"$TASK_CHECK_DIR/transport-checks"

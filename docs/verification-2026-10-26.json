@@ -1,0 +1,35 @@
+{
+  "date": "2026-10-26",
+  "timezone": "Asia/Hong_Kong",
+  "appVersion": "0.2.0",
+  "device": "X300 Pro",
+  "systemManagedMTP": true,
+  "oneDriveKeptRunning": true,
+  "photoServiceKeptRunning": true,
+  "realDeviceRoundtrip": {
+    "emptyFolderVerified": true,
+    "existingDestinationRejected": true,
+    "filesVerified": 4,
+    "remoteFolder": "AndroidMTP-Test-20261026-d169dd-verified",
+    "sha256": {
+      "hello.txt": "ea976afb12fe778d98020efeb26b2ed5b283952247748593995972ec24104638",
+      "nested/測試-📱.txt": "e2a2a933ca2202d9dacc62785f6ff2ed4a6c4fcf5dc361334b0ecc954f81ecb8",
+      "sample.bin": "2e7cab6314e9614b6f2da12630661c3038e5592025f6534ba5823c3b340a1cb6",
+      "zero-byte.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "actualAppDownload": {
+    "verifiedFiles": 3,
+    "emptyFolder": true,
+    "sha256Match": true,
+    "remoteFolder": "AndroidMTP-Test-20261026-c986b2-verified"
+  },
+  "actualAppDisconnectReconnect": true,
+  "actualAppRefreshAfterSecondClientClose": true,
+  "finalAppConnected": true,
+  "phoneUserFilesChanged": false,
+  "limitations": [
+    "Large-file offsets above 4 GB covered by codec/logic checks, not a physical multi-GB transfer.",
+    "Synthetic AndroidMTP-Test folders were left on the phone."
+  ]
+}

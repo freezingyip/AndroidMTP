@@ -4,6 +4,8 @@ AndroidMTP's application code is newly written for this project. No OpenMTP or A
 
 ## Runtime libraries
 
+The preferred connection uses Apple's system-provided ImageCaptureCore framework. The PTP/MTP codec and service implementation are original project code using the public protocol layouts and platform APIs.
+
 - libmtp — LGPL-2.1-or-later. Source: https://github.com/libmtp/libmtp . Homebrew: https://formulae.brew.sh/formula/libmtp .
 - libusb — LGPL-2.1-or-later. Source: https://github.com/libusb/libusb . Homebrew: https://formulae.brew.sh/formula/libusb .
 

@@ -29,9 +29,13 @@ final class BrowserModel: ObservableObject {
     @Published var proposedName = ""
     @Published var showDeleteConfirmation = false
 
-    private let service = MTPService()
+    private let service: any MTPTransport
     private var cancelled = false
     private var activeTransferID: UUID?
+
+    init(service: any MTPTransport = DeviceFileService()) {
+        self.service = service
+    }
 
     enum NamePrompt: String, Identifiable {
         case newFolder, rename

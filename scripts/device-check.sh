@@ -13,7 +13,7 @@ TASK_LINK_FLAGS=($(pkg-config --libs-only-L --libs-only-l libmtp))
 clang -Wall -Wextra -Werror -c Sources/CAndroidMTP/CAndroidMTP.c \
     -I Sources/CAndroidMTP/include "${TASK_CFLAGS[@]}" -o "$TASK_CHECK_DIR/bridge.o"
 xcrun swiftc -swift-version 5 -module-cache-path "$TASK_CHECK_DIR/ModuleCache" \
-    -I Sources/CAndroidMTP/include Sources/AndroidMTPCore/Models.swift \
-    Sources/AndroidMTPCore/MTPService.swift scripts/tests/device_roundtrip.swift \
+    -I Sources/CAndroidMTP/include Sources/AndroidMTPCore/*.swift \
+    scripts/tests/device_roundtrip.swift \
     "$TASK_CHECK_DIR/bridge.o" "${TASK_LINK_FLAGS[@]}" -o "$TASK_CHECK_DIR/roundtrip"
-echo "Built the hardware check. Run .build/device-check/roundtrip .build/device-test after closing other MTP sessions."
+echo "Built the hardware check. Run .build/device-check/roundtrip .build/device-test with the unlocked phone in File transfer mode."
