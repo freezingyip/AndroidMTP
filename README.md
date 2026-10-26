@@ -51,6 +51,10 @@ The gallery requests small thumbnails directly from the phone and displays previ
 
 Preview reads run one at a time; the first 200 thumbnails are prefetched. The original-file cache targets 512 MB, excluding files retained for a receiving Mac app. Unused temporary files are removed when the gallery closes. Animated images show their first frame.
 
+## App icon
+
+The app uses original mint-and-teal phone/folder artwork. The master is `assets/AndroidMTP-Icon.png`, the packaged macOS icon is `assets/AndroidMTP.icns`, and the generation prompt is saved in `assets/icon-prompt.txt`. After replacing the square master artwork, run `python3 scripts/build_icon.py` on macOS to regenerate all 1×/2× representations, then rebuild the app.
+
 ## References
 
 - [OpenMTP](https://github.com/ganeshrvel/openmtp): MTP workflow and compatibility reference. Its current Kalam backend is separate from this implementation.

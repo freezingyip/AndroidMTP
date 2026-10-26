@@ -73,6 +73,8 @@ def main():
             prefix = "@executable_path/../Frameworks/" if destination == executable else "@loader_path/"
             subprocess.run(["/usr/bin/install_name_tool", "-change", dependency, prefix + name, str(destination)], check=True)
 
+    shutil.copy2(ROOT / "assets" / "AndroidMTP.icns", resources / "AndroidMTP.icns")
+
     notices = resources / "ThirdPartyLicenses"
     notices.mkdir()
     shutil.copy2(ROOT / "THIRD_PARTY_NOTICES.md", notices)
@@ -88,8 +90,9 @@ def main():
             "CFBundleIdentifier": "local.androidmtp.app",
             "CFBundleExecutable": "AndroidMTP",
             "CFBundlePackageType": "APPL",
-            "CFBundleShortVersionString": "0.4.0",
-            "CFBundleVersion": "5",
+            "CFBundleIconFile": "AndroidMTP.icns",
+            "CFBundleShortVersionString": "0.4.1",
+            "CFBundleVersion": "6",
             "LSMinimumSystemVersion": ".".join(map(str, minimum)),
             "NSHighResolutionCapable": True,
             "NSSupportsAutomaticGraphicsSwitching": True,

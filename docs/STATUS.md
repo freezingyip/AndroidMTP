@@ -1,5 +1,9 @@
 # Development status
 
+## Version 0.4.1 — app icon, 26 October 2026
+
+Added original AI-generated mint-and-teal phone/folder icon artwork, a complete ICNS bundle of 16–1024 pixel representations, and its reproducible sizing script. Packaging copies the icon into app resources and sets CFBundleIconFile; launch also applies the icon explicitly so the running Dock icon refreshes. Artwork and prompt are committed under `assets/`. The 32-pixel representation was visually checked, the ICNS structure validated, and the release bundle built and signed successfully.
+
 ## Version 0.4.0 — Finder copy/paste, 26 October 2026
 
 Added file-list Copy (⌘C) and Paste (⌘V), Edit menu commands, and context-menu actions. Copy downloads selected files/folders into a unique temporary directory and publishes standard file URLs only after all transfers succeed. Paste reads Finder file URLs and uploads to the current Android folder. Text fields retain native text commands through the responder chain. Transfers keep existing progress, cancellation, and collision checks.
