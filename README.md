@@ -1,14 +1,24 @@
 # AndroidMTP
 
-A native Mac file browser for Android phones. Standard USB **MTP / File transfer** is the default connection; **USB debugging is not required** for normal file access. Version 0.4.0 adds Finder copy/paste transfers, a thumbnail-first photo gallery, and uses the macOS device service so Photos and OneDrive can keep running.
+<p align="center"><img src="assets/AndroidMTP-Icon.png" alt="AndroidMTP app icon" width="144"></p>
 
-## Product direction
+A native Mac file browser for Android phones. Standard USB **MTP / File transfer** is the default connection; **USB debugging is not required** for normal file access. Version 0.4.1 includes Finder copy/paste transfers, a thumbnail-first photo gallery, and uses the macOS device service so Photos and OneDrive can keep running.
+
+## Features
 
 - Browse the internal storage and SD cards exposed by the phone.
 - Upload and download files and folders, create folders, rename items, and delete with confirmation.
-- Use a native sidebar, file list, breadcrumbs, toolbar, and transfer status inspired by the familiar layout of AndroidFileSync.
+- Copy and paste files between Finder and Android, with progress and cancellation.
+- Browse photos with small previews, a thumbnail strip, and Open on Mac.
+- Use a native sidebar, file list, breadcrumbs, and toolbar inspired by AndroidFileSync.
 - Offer extra ADB tools separately, only when the user explicitly chooses them and authorizes their computer on Android.
 - Keep transfers local. No account, cloud service, or phone companion app.
+
+## Download
+
+Get the app from [GitHub Releases](https://github.com/freezingyip/AndroidMTP/releases). Version **0.4.1 is a development prerelease for Apple Silicon Macs running macOS 27.0 or newer**. This specific build inherits its minimum system version from its bundled Homebrew libraries. It is ad hoc signed and **not notarized**, so macOS may block launching the download. It is not a general-purpose signed macOS release yet.
+
+For other Macs, build from source using the instructions below; the source targets macOS 13+, while your installed libraries and toolchain determine the actual minimum version. Intel builds are not yet verified. No Homebrew installation is needed to run the downloadable bundle on a compatible Mac.
 
 ## Development
 
@@ -20,9 +30,9 @@ brew install libmtp pkgconf
 open build/AndroidMTP.app
 ```
 
-The build script builds the app and copies its MTP libraries into the local app bundle. The source targets macOS 13+, but the packaged app's minimum OS also follows the installed Homebrew libraries. This development bundle is built for this Mac. It uses ad-hoc signing; public distribution will need a proper release process.
+The build script builds the app and copies its MTP libraries into the local app bundle. The source targets macOS 13+, but the packaged app's minimum OS also follows the installed Homebrew libraries. This development bundle is built for this Mac. It uses ad-hoc signing; a Developer ID signed and notarized release is future work.
 
-Run `./scripts/test.sh` for hardware-free checks of file safety, atomic download completion, cancellation, 64-bit values, PTP codecs, transport routing, recursive chunked transfers, ADB parsing, APK preflight, and gallery decoding, selection, caching, and dismissal. The optional `./scripts/test.sh --xctest` suite needs an Xcode toolchain with XCTest.
+Run `./scripts/test.sh` for hardware-free checks of file safety, atomic download completion, cancellation, 64-bit values, PTP codecs, transport routing, recursive chunked transfers, ADB parsing, APK preflight, and gallery decoding, selection, caching, dismissal, and clipboard transfers. Clipboard tests require a local macOS login session with access to the pasteboard service. The optional `./scripts/test.sh --xctest` suite needs an Xcode toolchain with XCTest.
 
 For an optional live-device check, `./scripts/device-check.sh` prepares four harmless local files (including a 5 MB binary and an empty file) and builds the test executable. Run `.build/device-check/roundtrip .build/device-test` with exactly one unlocked phone connected. This explicitly uploads a test folder, renames it, downloads it, checks file hashes, and leaves the test folder on Android. It does not delete or replace existing phone files. It uses the same transport selection as the app.
 
@@ -64,3 +74,7 @@ The app uses original mint-and-teal phone/folder artwork. The master is `assets/
 - [Android ADB documentation](https://developer.android.com/tools/adb): optional debugging features and computer authorization.
 
 See [the product brief](docs/PRODUCT.md), [development status](docs/STATUS.md), and [third-party notes](THIRD_PARTY_NOTICES.md).
+
+## License
+
+Original AndroidMTP code and artwork are available under the [MIT License](LICENSE). Bundled libmtp and libusb use LGPL-2.1-or-later; see [third-party notices](THIRD_PARTY_NOTICES.md) and [dependency source/rebuild instructions](docs/DEPENDENCIES.md).

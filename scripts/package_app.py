@@ -78,6 +78,7 @@ def main():
     notices = resources / "ThirdPartyLicenses"
     notices.mkdir()
     shutil.copy2(ROOT / "THIRD_PARTY_NOTICES.md", notices)
+    shutil.copy2(ROOT / "LICENSE", resources / "LICENSE.txt")
     for source in originals:
         copying = source.parent.parent / "COPYING"
         if copying.exists():

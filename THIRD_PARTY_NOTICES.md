@@ -1,6 +1,6 @@
 # Third-party components and references
 
-AndroidMTP's application code is newly written for this project. No OpenMTP or AndroidFileSync application source has been copied.
+AndroidMTP's original application code and assets are released under the MIT license in `LICENSE`. No OpenMTP or AndroidFileSync application source has been copied.
 
 ## Runtime libraries
 
@@ -9,7 +9,7 @@ The preferred connection uses Apple's system-provided ImageCaptureCore framework
 - libmtp — LGPL-2.1-or-later. Source: https://github.com/libmtp/libmtp . Homebrew: https://formulae.brew.sh/formula/libmtp .
 - libusb — LGPL-2.1-or-later. Source: https://github.com/libusb/libusb . Homebrew: https://formulae.brew.sh/formula/libusb .
 
-The development bundle dynamically links these libraries. The build copies the installed dependency license files when available. Distribution requires retaining the appropriate notices and providing the corresponding source/relinking information under the dependencies' licenses. This local development build is not a signed or notarized public release.
+The development bundle dynamically links these libraries. The build copies the installed dependency license files when available. The library license texts are included in `licenses/` and in the app bundle. The GitHub prerelease provides a separate corresponding-source archive for the exact bundled library versions, their verified upstream checksums, and rebuild/replacement instructions in `docs/DEPENDENCIES.md`. Dependency licenses remain LGPL-2.1-or-later; the app's MIT license does not replace them. The downloadable development build is ad hoc signed, not Developer ID signed or notarized.
 
 ## Optional ADB
 
