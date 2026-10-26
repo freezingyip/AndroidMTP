@@ -20,6 +20,7 @@ struct AndroidMTPApp: App {
         }
         .defaultSize(width: 1120, height: 740)
         .commands {
+            FileClipboardCommands()
             CommandGroup(replacing: .newItem) {
                 Button("New Folder", action: model.beginNewFolder)
                     .keyboardShortcut("n", modifiers: [.command, .shift])

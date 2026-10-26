@@ -1,3 +1,4 @@
+import AppKit
 import AndroidMTPCore
 import SwiftUI
 import UniformTypeIdentifiers
@@ -35,6 +36,9 @@ struct BrowserView: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Android file transfer")
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            model.clipboardDidChange()
+        }
         .sheet(isPresented: $model.showPhotoGallery, onDismiss: {
             Task { await model.closePhotoGallery() }
         }) {
@@ -282,6 +286,11 @@ struct BrowserView: View {
                 if let photo = model.selectedPhoto { model.previewPhoto(photo) }
             }.accessibilityLabel("Preview selected photo")
                 .disabled(!model.canAct || model.selectedPhoto == nil)
+            Button("Copy") { Task { await model.copySelection() } }
+                .disabled(!model.canAct || model.selection.isEmpty)
+            Button("Paste to upload") { Task { await model.pasteFiles() } }
+                .disabled(!model.canPasteFiles)
+            Divider()
             Button("Download to Mac…", action: model.chooseDownloadDestination)
                 .disabled(!model.canAct || model.selection.isEmpty)
             Button("Rename…", action: model.beginRename)
@@ -327,6 +336,7 @@ struct BrowserView: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Files in \(model.currentFolderName)")
+        .focusedObject(model)
     }
 
     @ToolbarContentBuilder
@@ -456,18 +466,16 @@ struct BrowserView: View {
             .accessibilityElement(children: .contain)
             .accessibilityLabel("Connection status")
             if let error = model.connectionError {
-                Label {
-                    Text(error)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .textSelection(.enabled)
-                } icon: {
-                    Image(systemName: "exclamationmark.triangle.fill")
+                HStack(alignment: .top, spacing: 8) {
+                    Image(systemName: "exclamationmark.triangle.fill").accessibilityHidden(true)
+                    Text(error).fixedSize(horizontal: false, vertical: true)
                 }
                 .font(.callout)
                 .foregroundStyle(.red)
                 .padding(12)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(Color.red.opacity(0.07), in: RoundedRectangle(cornerRadius: 9))
+                .accessibilityElement(children: .ignore)
                 .accessibilityLabel("Connection error: \(error)")
             }
             Text("If another MTP app is using the device, finish its transfers and close its connection first.")

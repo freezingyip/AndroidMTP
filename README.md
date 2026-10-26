@@ -1,6 +1,6 @@
 # AndroidMTP
 
-A native Mac file browser for Android phones. Standard USB **MTP / File transfer** is the default connection; **USB debugging is not required** for normal file access. Version 0.3.1 adds a thumbnail-first photo gallery and uses the macOS device service so Photos and OneDrive can keep running.
+A native Mac file browser for Android phones. Standard USB **MTP / File transfer** is the default connection; **USB debugging is not required** for normal file access. Version 0.4.0 adds Finder copy/paste transfers, a thumbnail-first photo gallery, and uses the macOS device service so Photos and OneDrive can keep running.
 
 ## Product direction
 
@@ -35,6 +35,13 @@ For an optional live-device check, `./scripts/device-check.sh` prepares four har
 The default connection sends normal MTP commands through Apple's ImageCaptureCore service. It cooperates with the photo-import service rather than competing for its exclusive USB interface. A direct libmtp fallback is retained for devices macOS does not discover; that fallback may still require exclusive USB access. Connection errors appear next to the controls. See `docs/STATUS.md` for actual-app and live-device verification.
 
 Standard MTP only exposes the storage Android makes available. Protected app data and restricted Android folders may remain inaccessible. Enabling ADB does not grant root or promise access to private app data.
+
+## Copy and Paste
+
+- **Upload:** copy files or folders in Finder (⌘C), click the file list in the destination Android folder, then paste (⌘V). You can also right-click the file list and choose **Paste to upload**.
+- **Download:** select files or folders in AndroidMTP and copy (⌘C). Wait until the status says **Copied… Paste in Finder**, then paste (⌘V) into a Finder folder.
+
+Copy downloads the selection into a temporary local folder before publishing it as normal clipboard files. Finder can paste them after disconnecting the phone or quitting AndroidMTP. Failed/cancelled copies do not publish incomplete results; a newer clipboard is preserved if you copy something else during a transfer. Existing destinations are not replaced during AndroidMTP transfers. Cut/move from Android is not offered. Search and rename text fields keep normal text Copy/Paste behavior.
 
 ## Photo gallery
 

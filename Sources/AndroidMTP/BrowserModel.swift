@@ -15,6 +15,7 @@ final class BrowserModel: ObservableObject {
     @Published var selection: Set<UInt32> = []
     @Published var search = ""
     @Published var isDropTarget = false
+    @Published private(set) var clipboardRevision = 0
     @Published private(set) var isBusy = false
     @Published private(set) var isTransferring = false
     @Published private(set) var status = "Ready to connect"
@@ -32,11 +33,13 @@ final class BrowserModel: ObservableObject {
     @Published var showPhotoGallery = false
     private(set) var photoGallery: PhotoGalleryModel?
 
+    private let pasteboard: NSPasteboard
     private let service: any MTPTransport
     private var cancelled = false
     private var activeTransferID: UUID?
 
-    init(service: any MTPTransport = DeviceFileService()) {
+    init(service: any MTPTransport = DeviceFileService(), pasteboard: NSPasteboard = .general) {
+        self.pasteboard = pasteboard
         self.service = service
     }
 
@@ -273,6 +276,64 @@ final class BrowserModel: ObservableObject {
         }
     }
 
+    func clipboardDidChange() { clipboardRevision = pasteboard.changeCount }
+
+    var clipboardFiles: [URL] {
+        (pasteboard.readObjects(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) ?? [])
+            .compactMap { ($0 as? NSURL).map { $0 as URL } }.filter(\.isFileURL)
+    }
+
+    var canPasteFiles: Bool {
+        _ = clipboardRevision
+        return canAct && !clipboardFiles.isEmpty
+    }
+
+    func pasteFiles() async {
+        guard canAct else { return }
+        let urls = clipboardFiles
+        guard !urls.isEmpty else { status = "Copy files in Finder first, then paste here to upload."; return }
+        await upload(urls)
+    }
+
+    func copySelection() async {
+        guard canAct else { return }
+        let targets = selectedItems
+        guard !targets.isEmpty else { return }
+        let clipboardVersion = pasteboard.changeCount
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("AndroidMTP-Clipboard-\(UUID().uuidString)", isDirectory: true)
+        do {
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: false,
+                                                   attributes: [.posixPermissions: 0o700])
+            let completed = await performTransfers(names: targets.map(\.name), isUpload: false) { index, progress in
+                let item = targets[index]
+                guard !item.name.isEmpty, item.name != ".", item.name != "..", !item.name.contains("/"), !item.name.contains("\0") else {
+                    throw AndroidMTPError.message("This file has an invalid name and cannot be copied.")
+                }
+                try await self.service.download(item, to: directory.appendingPathComponent(item.name), progress: progress)
+            }
+            guard completed else { try? FileManager.default.removeItem(at: directory); return }
+            // Do not replace something the user copied while the USB download was running.
+            guard pasteboard.changeCount == clipboardVersion else {
+                try? FileManager.default.removeItem(at: directory)
+                status = "The clipboard changed while downloading. Select Copy again to copy these files."
+                return
+            }
+            let urls = targets.map { directory.appendingPathComponent($0.name) as NSURL }
+            pasteboard.clearContents()
+            guard pasteboard.writeObjects(urls) else {
+                throw AndroidMTPError.message("Could not place the downloaded files on the clipboard. Try Copy again.")
+            }
+            clipboardDidChange()
+            status = "Copied \(targets.count) item\(targets.count == 1 ? "" : "s"). Paste in Finder to save to your Mac."
+            // Keep successful clipboard files available after disconnect/quit for Finder paste.
+            // macOS manages their temporary directory; phone originals are unchanged.
+        } catch {
+            try? FileManager.default.removeItem(at: directory)
+            report(error)
+        }
+    }
+
     func chooseDownloadDestination() {
         guard canAct else { return }
         let targets = selectedItems
@@ -294,8 +355,9 @@ final class BrowserModel: ObservableObject {
         }
     }
 
-    private func performTransfers(names: [String], isUpload: Bool, operation: (Int, @escaping @Sendable (TransferUpdate) -> Void) async throws -> Void) async {
-        guard !isBusy else { return }
+    @discardableResult
+    private func performTransfers(names: [String], isUpload: Bool, operation: (Int, @escaping @Sendable (TransferUpdate) -> Void) async throws -> Void) async -> Bool {
+        guard !isBusy else { return false }
         isBusy = true
         isTransferring = true
         cancelled = false
@@ -340,6 +402,7 @@ final class BrowserModel: ObservableObject {
         activeTransferID = nil
         do { try await reloadItems() }
         catch { if !cancelled && !transferFailed { report(error) } }
+        return !cancelled && !transferFailed && finished == names.count
     }
 
     func cancelTransfers() {

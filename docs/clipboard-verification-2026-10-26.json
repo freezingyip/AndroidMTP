@@ -1,0 +1,12 @@
+{
+  "name": "AndroidMTP-Clipboard-Test-56ca1723.txt",
+  "upload_shortcut": true,
+  "download_shortcut": true,
+  "finder_paste": true,
+  "sha256": "32642be0bee45bed1d2764bd0a5da922942062825f2fe4a399919dbfbadd8746",
+  "version": "0.4.0",
+  "device": "X300 Pro",
+  "date": "2026-10-26",
+  "method": "Finder Copy \u2192 AndroidMTP Paste \u2192 AndroidMTP Copy \u2192 Finder Paste",
+  "existing_phone_files_changed": false
+}

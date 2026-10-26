@@ -14,3 +14,10 @@ xcrun swiftc -swift-version 5 -module-cache-path "$TASK_ROOT/.build/ModuleCache"
     scripts/tests/gallery_checks.swift .build/core-checks/bridge.o \
     "${TASK_LINK_FLAGS[@]}" -o "$TASK_CHECK_DIR/gallery-checks"
 "$TASK_CHECK_DIR/gallery-checks"
+
+xcrun swiftc -swift-version 5 -module-cache-path "$TASK_ROOT/.build/ModuleCache" \
+    -I Sources/CAndroidMTP/include Sources/AndroidMTPCore/*.swift \
+    "$TASK_CHECK_DIR/BrowserModel.swift" "$TASK_CHECK_DIR/PhotoGallery.swift" \
+    scripts/tests/clipboard_checks.swift .build/core-checks/bridge.o \
+    "${TASK_LINK_FLAGS[@]}" -o "$TASK_CHECK_DIR/clipboard-checks"
+"$TASK_CHECK_DIR/clipboard-checks"

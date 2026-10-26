@@ -1,5 +1,13 @@
 # Development status
 
+## Version 0.4.0 — Finder copy/paste, 26 October 2026
+
+Added file-list Copy (⌘C) and Paste (⌘V), Edit menu commands, and context-menu actions. Copy downloads selected files/folders into a unique temporary directory and publishes standard file URLs only after all transfers succeed. Paste reads Finder file URLs and uploads to the current Android folder. Text fields retain native text commands through the responder chain. Transfers keep existing progress, cancellation, and collision checks.
+
+The actual app passed a Finder → Android → Finder round trip using ⌘C/⌘V in both apps. The 55-byte synthetic file matched its original SHA-256 after Finder paste. A uniquely named test file remains on the phone; no existing phone files were changed. Evidence: `docs/clipboard-verification-2026-10-26.json`. Select All (⌘A) is available for the file list and native text fields. Actual-app text Select All → Copy → clear → Paste restored the search text without triggering an upload.
+
+Tests use a private named macOS pasteboard and a fake phone transport. They verify multiple files/folders, Unicode filenames, downloaded bytes, upload URL routing, rejection of plain text, preserved clipboard on failure/cancellation, and a newer clipboard winning a slow-download race. These tests need access to the macOS pasteboard service and pass outside the restricted test environment.
+
 ## Version 0.3.1 — faster, smaller previews, 26 October 2026
 
 Gallery previews now use the standard MTP GetThumb operation (0x100A), forwarded by the transport coordinator. Missing thumbnails do not trigger a large original download. Only files up to 512 KB have an automatic original fallback; Open on Mac explicitly downloads other originals. Previews are downsampled to 640 pixels and the gallery window is smaller.
